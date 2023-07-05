@@ -160,4 +160,4 @@ cython_debug/
 #.idea/
 
 # Virtual enviornment
-cv_env/
+env_cv/
