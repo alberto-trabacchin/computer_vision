@@ -39,7 +39,8 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.linear_sigmoid_stack = nn.Sequential(
-            nn.Linear(30, 1),
+            nn.Linear(30, 10),
+            nn.Linear(10, 1),
             nn.Sigmoid()
         )
 
@@ -49,19 +50,23 @@ class Net(nn.Module):
         return output
     
 
-def train(train_loader, model, loss_fun, optimizer, epochs):
+def train(train_loader, model, loss_fun, optimizer, device, epochs):
     losses = []
     for epoch in range(epochs):
         running_loss = 0.0
         for i, batch in enumerate(train_loader):
             data, labels = batch
+            data = data.to(device)
+            labels = labels.to(device)
+            optimizer.zero_grad()
             predicts = model(data)
             loss = loss_fun(predicts, labels)
             loss.backward()
             optimizer.step()
             running_loss += loss
         losses.append(running_loss)
-        print(f"Loss at epoch {epoch + 1}: {running_loss}")
+        if (epoch % 10 == 0):
+            print(f"Loss at epoch {epoch + 1}: {running_loss}")
         running_loss = 0.0
     return losses
 
@@ -77,5 +82,5 @@ if __name__ == "__main__":
     model = Net().double()
     model.to(device)
     loss_fun = torch.nn.BCELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr = 0.001)
-    train(train_loader, model, loss_fun, optimizer, epochs = 100)
+    optimizer = torch.optim.SGD(model.parameters(), lr = 0.01)
+    train(train_loader, model, loss_fun, optimizer, device, epochs = 1000)
