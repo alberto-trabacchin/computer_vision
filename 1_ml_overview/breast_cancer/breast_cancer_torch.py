@@ -1,10 +1,39 @@
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.data.dataloader as dataloader
+from torch.utils.data import random_split
 import torch
 import pandas as pd
+from typing import Tuple
 from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import train_test_split
+import numpy as np
+
+class CancerDataset(torch.utils.data.Dataset):
+    def __init__(self):
+        dataset = load_breast_cancer()
+        self.data = dataset["data"]
+        self.labels = dataset["target"].astype(np.float64).reshape(-1, 1)
+        self.size = len(dataset["data"])
+    
+    def __len__(self) -> int:
+        return self.size
+    
+    def __getitem__(self, index: int) -> Tuple[np.ndarray, int]:
+        return (
+            self.data[index],
+            self.labels[index]
+        )
+
+
+def make_loader(ds, batch_size = 4, num_workers = 4):
+    loader = torch.utils.data.DataLoader(
+        ds,
+        batch_size = batch_size,
+        shuffle = False,
+        num_workers = num_workers,
+        pin_memory = True
+    )
+    return loader
+
 
 class Net(nn.Module):
     def __init__(self):
@@ -18,24 +47,35 @@ class Net(nn.Module):
         x = F.normalize(x)
         output = self.linear_sigmoid_stack(x)
         return output
+    
+
+def train(train_loader, model, loss_fun, optimizer, epochs):
+    losses = []
+    for epoch in range(epochs):
+        running_loss = 0.0
+        for i, batch in enumerate(train_loader):
+            data, labels = batch
+            predicts = model(data)
+            loss = loss_fun(predicts, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss
+        losses.append(running_loss)
+        print(f"Loss at epoch {epoch + 1}: {running_loss}")
+        running_loss = 0.0
+    return losses
 
 
 if __name__ == "__main__":
     device = ("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using {device} device.")
-    data = load_breast_cancer()
-    x_train, x_test, y_train, y_test = train_test_split(data.data, data.target, 
-                                                        test_size = 0.2, 
-                                                        shuffle = True)
-    x_train = torch.FloatTensor(x_train)
-    x_test = torch.FloatTensor(x_test)
-    y_train = torch.FloatTensor(y_train).reshape(-1, 1)
-    y_test = torch.FloatTensor(y_test).reshape(-1, 1)
-    training_loader = dataloader.DataLoader(x_)
-
-    model = Net()
-    y_hat = model(x_train)
-    loss_fn = nn.BCELoss()
-    loss = loss_fn(y_hat, y_train)
+    ds = CancerDataset()
+    ds_train, ds_test, ds_val = random_split(ds, [0.3, 0.3, 0.4])
+    train_loader = make_loader(ds_train)
+    test_loader = make_loader(ds_test)
+    val_loader = make_loader(ds_val)
+    model = Net().double()
+    model.to(device)
+    loss_fun = torch.nn.BCELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr = 0.001)
-    
+    train(train_loader, model, loss_fun, optimizer, epochs = 100)
