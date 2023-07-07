@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.utils.data import random_split
-from typing import Dict, Union, Tuple
+from typing import Tuple
 from sklearn.datasets import load_breast_cancer
 
 class CancerDataset(torch.utils.data.Dataset):
@@ -47,6 +47,9 @@ if __name__ == "__main__":
     print(f"Validation dataset's first element:\n {ds_val[0]}\n")
 
     for batch in iter(train_loader):
+        data, labels = batch
+    
+    for i, batch in enumerate(train_loader):
         data, labels = batch
 
     print("Last train batch:")
