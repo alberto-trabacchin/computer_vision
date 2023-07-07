@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.utils.data import random_split
-from typing import Dict, Union
+from typing import Dict, Union, Tuple
 from sklearn.datasets import load_breast_cancer
 
 class CancerDataset(torch.utils.data.Dataset):
@@ -14,10 +14,10 @@ class CancerDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return self.size
     
-    def __getitem__(self, index: int) -> Dict[str, Union[np.ndarray, int]]:
-        return dict(
-            x = self.data[index],
-            y = self.labels[index]
+    def __getitem__(self, index: int) -> Tuple[np.ndarray, int]:
+        return (
+            self.data[index],
+            self.labels[index]
         )
 
 def make_loader(ds, batch_size = 4, num_workers = 4):
@@ -44,8 +44,10 @@ if __name__ == "__main__":
     print(f"Test dataset length: {len(ds_test)}.")
     print(f"Test dataset's first element:\n {ds_test[0]}\n")
     print(f"Validation dataset length: {len(ds_val)}.")
-    print(f"Validation dataset's first element:\n {ds_val[0]}")
+    print(f"Validation dataset's first element:\n {ds_val[0]}\n")
 
     for batch in iter(train_loader):
-        print(batch["x"])
-        print(batch["y"])
+        data, labels = batch
+
+    print("Last train batch:")
+    print(data)
