@@ -24,7 +24,7 @@ class CancerDataset(torch.utils.data.Dataset):
         )
 
 
-def make_loader(ds, batch_size = 4, num_workers = 4):
+def make_loader(ds, batch_size = 100, num_workers = 4):
     loader = torch.utils.data.DataLoader(
         ds,
         batch_size = batch_size,
@@ -39,8 +39,7 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.linear_sigmoid_stack = nn.Sequential(
-            nn.Linear(30, 10),
-            nn.Linear(10, 1),
+            nn.Linear(30, 1),
             nn.Sigmoid()
         )
 
@@ -59,8 +58,8 @@ def train(train_loader, model, loss_fun, optimizer, device, epochs):
             data = data.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
-            predicts = model(data)
-            loss = loss_fun(predicts, labels)
+            outputs = model(data)
+            loss = loss_fun(outputs, labels)
             loss.backward()
             optimizer.step()
             running_loss += loss
@@ -82,5 +81,5 @@ if __name__ == "__main__":
     model = Net().double()
     model.to(device)
     loss_fun = torch.nn.BCELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr = 0.01)
+    optimizer = torch.optim.SGD(model.parameters(), lr = 0.1)
     train(train_loader, model, loss_fun, optimizer, device, epochs = 1000)
